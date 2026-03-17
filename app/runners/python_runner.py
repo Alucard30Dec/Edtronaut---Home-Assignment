@@ -49,6 +49,7 @@ def _build_memory_limiter(memory_limit_mb: int | None) -> Callable[[], None] | N
 def run_python_code(
     source_code: str,
     *,
+    stdin_data: str | None,
     timeout_seconds: int,
     memory_limit_mb: int | None,
     python_executable: str,
@@ -66,6 +67,7 @@ def run_python_code(
                 [python_executable, script_path],
                 capture_output=True,
                 text=True,
+                input=stdin_data,
                 timeout=timeout_seconds,
                 cwd=tmp_dir,
                 preexec_fn=_build_memory_limiter(memory_limit_mb),

@@ -31,6 +31,9 @@ node_modules/
 dist/
 frontend/dist/
 .npm/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # Agent progress logs
 progress-pdf/

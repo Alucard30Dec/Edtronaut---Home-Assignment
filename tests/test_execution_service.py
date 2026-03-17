@@ -88,7 +88,20 @@ class ExecutionServiceTestCase(unittest.TestCase):
 
         self.assertEqual(execution.status, "QUEUED")
         self.assertEqual(execution.source_code_snapshot, "print('queued')")
-        mock_enqueue.assert_called_once_with(execution.id)
+        mock_enqueue.assert_called_once_with(execution.id, stdin_data=None)
+
+    def test_create_execution_enqueues_with_stdin_payload(self) -> None:
+        code_session = self._create_code_session(source_code="print(input())")
+
+        with patch("app.queue.enqueue_execution_job", return_value=object()) as mock_enqueue:
+            execution = create_execution_and_enqueue(
+                self.db,
+                session_id=code_session.id,
+                stdin_data="29\n",
+            )
+
+        self.assertEqual(execution.status, "QUEUED")
+        mock_enqueue.assert_called_once_with(execution.id, stdin_data="29\n")
 
     def test_create_execution_rate_limit_subsecond_boundary(self) -> None:
         code_session = self._create_code_session(source_code="print('rate-limit')")
@@ -199,6 +212,25 @@ class ExecutionServiceTestCase(unittest.TestCase):
         self.assertIsNotNone(refreshed)
         self.assertEqual(refreshed.status, "TIMEOUT")
         self.assertEqual(refreshed.error_message, "Execution timed out after 1 seconds.")
+
+    def test_process_execution_passes_stdin_to_runner(self) -> None:
+        code_session = self._create_code_session(source_code="print(input())")
+        execution = self._create_execution(session_id=code_session.id, status="QUEUED")
+        successful_result = PythonRunResult(
+            outcome=RUN_OUTCOME_COMPLETED,
+            stdout="29\n",
+            stderr="",
+            execution_time_ms=6,
+        )
+
+        with patch(
+            "app.services.execution_service.run_python_code",
+            return_value=successful_result,
+        ) as mock_runner:
+            process_execution(execution_id=execution.id, db=self.db, stdin_data="29\n")
+
+        mock_runner.assert_called_once()
+        self.assertEqual(mock_runner.call_args.kwargs["stdin_data"], "29\n")
 
 
 if __name__ == "__main__":

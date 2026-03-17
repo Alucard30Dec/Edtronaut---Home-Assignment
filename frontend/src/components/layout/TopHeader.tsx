@@ -1,10 +1,12 @@
-import { Activity, Gauge, ServerCog } from 'lucide-react';
+import { Activity, ServerCog } from 'lucide-react';
 
 import type { AutosaveState } from '@/hooks/useDebouncedAutosave';
 import { AutosaveIndicator } from '@/components/execution/AutosaveIndicator';
+import { LanguageToggle } from '@/components/layout/LanguageToggle';
 import { RunButton } from '@/components/execution/RunButton';
 import { StatusBadge } from '@/components/execution/StatusBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLanguage } from '@/lib/language';
 
 type TopHeaderProps = {
   backendHealth: 'online' | 'offline' | 'checking';
@@ -13,7 +15,6 @@ type TopHeaderProps = {
   onRun: () => void;
   runDisabled: boolean;
   runLoading: boolean;
-  progressLabel: string;
 };
 
 export function TopHeader({
@@ -23,8 +24,8 @@ export function TopHeader({
   onRun,
   runDisabled,
   runLoading,
-  progressLabel,
 }: TopHeaderProps) {
+  const { t } = useLanguage();
   const healthStatus = backendHealth === 'online' ? 'ONLINE' : backendHealth === 'offline' ? 'OFFLINE' : 'CHECKING';
 
   return (
@@ -32,12 +33,7 @@ export function TopHeader({
       <div className='mx-auto flex h-16 max-w-[1800px] items-center justify-between px-4'>
         <div className='flex items-center gap-4'>
           <div>
-            <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>AI Job Simulation Platform</p>
-            <h1 className='text-base font-semibold'>Live Code Execution & Management</h1>
-          </div>
-          <div className='hidden items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs md:flex'>
-            <Gauge className='h-3.5 w-3.5 text-muted-foreground' />
-            {progressLabel}
+            <h1 className='text-base font-semibold'>{t.header.title}</h1>
           </div>
         </div>
 
@@ -52,13 +48,15 @@ export function TopHeader({
               </TooltipTrigger>
               <TooltipContent>
                 {backendHealth === 'online'
-                  ? 'Backend reachable'
+                  ? t.header.backendReachable
                   : backendHealth === 'offline'
-                    ? 'Backend not reachable'
-                    : 'Checking backend health'}
+                    ? t.header.backendNotReachable
+                    : t.header.backendChecking}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          <LanguageToggle />
 
           <div className='hidden items-center gap-2 rounded-xl border bg-muted/20 px-3 py-2 sm:flex'>
             <Activity className='h-4 w-4 text-muted-foreground' />

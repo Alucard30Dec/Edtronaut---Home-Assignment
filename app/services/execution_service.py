@@ -72,7 +72,11 @@ def _log_lifecycle(event: str, *, level: int = logging.INFO, **fields: object) -
     logger.log(level, "execution.%s %s", event, payload)
 
 
-def create_execution_and_enqueue(db: Session, session_id: int) -> Execution:
+def create_execution_and_enqueue(
+    db: Session,
+    session_id: int,
+    stdin_data: str | None = None,
+) -> Execution:
     from app.queue import enqueue_execution_job
 
     session = db.get(CodeSession, session_id)
@@ -144,7 +148,7 @@ def create_execution_and_enqueue(db: Session, session_id: int) -> Execution:
     db.refresh(execution)
 
     try:
-        enqueue_execution_job(execution.id)
+        enqueue_execution_job(execution.id, stdin_data=stdin_data)
     except Exception as exc:
         db.rollback()
         execution.status = "FAILED"
@@ -190,7 +194,11 @@ def get_execution_by_id(db: Session, execution_id: int) -> Execution:
     return execution
 
 
-def process_execution(execution_id: int, db: Session) -> None:
+def process_execution(
+    execution_id: int,
+    db: Session,
+    stdin_data: str | None = None,
+) -> None:
     """Process one execution record from queued state to a final state."""
 
     started_at = _now_utc()
@@ -229,6 +237,7 @@ def process_execution(execution_id: int, db: Session) -> None:
 
     result = run_python_code(
         execution.source_code_snapshot,
+        stdin_data=stdin_data,
         timeout_seconds=settings.execution_timeout_seconds,
         memory_limit_mb=settings.execution_memory_limit_mb,
         python_executable=settings.python_runner_executable,
@@ -256,7 +265,7 @@ def process_execution(execution_id: int, db: Session) -> None:
         db.commit()
 
         try:
-            enqueue_execution_job(execution.id)
+            enqueue_execution_job(execution.id, stdin_data=stdin_data)
             _log_lifecycle(
                 "retry_queued",
                 level=logging.WARNING,
@@ -298,12 +307,12 @@ def process_execution(execution_id: int, db: Session) -> None:
     )
 
 
-def process_execution_job(execution_id: int) -> None:
+def process_execution_job(execution_id: int, stdin_data: str | None = None) -> None:
     """RQ worker entry: process one queued execution safely."""
 
     db = SessionLocal()
     try:
-        process_execution(execution_id=execution_id, db=db)
+        process_execution(execution_id=execution_id, db=db, stdin_data=stdin_data)
     except Exception as exc:
         execution = db.get(Execution, execution_id)
         if execution is not None and execution.status in {"QUEUED", "RUNNING"}:

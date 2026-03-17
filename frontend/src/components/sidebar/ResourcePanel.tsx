@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { useLanguage } from '@/lib/language';
 
 type ResourcePanelProps = {
   notes: string;
@@ -11,45 +12,45 @@ type ResourcePanelProps = {
 };
 
 export function ResourcePanel({ notes, onNotesChange }: ResourcePanelProps) {
+  const { t } = useLanguage();
+
   return (
     <Card className='h-[calc(100vh-7.5rem)]'>
       <CardHeader>
-        <CardTitle className='text-sm'>Resources & Notes</CardTitle>
+        <CardTitle className='text-sm'>{t.resources.title}</CardTitle>
       </CardHeader>
       <CardContent className='h-[calc(100%-4.5rem)] p-0'>
         <ScrollArea className='h-full px-5 pb-5'>
           <div className='space-y-4'>
             <section className='rounded-xl border bg-muted/30 p-4'>
               <div className='mb-2 flex items-center gap-2 text-sm font-semibold'>
-                <BookOpenText className='h-4 w-4' /> Quick references
+                <BookOpenText className='h-4 w-4' /> {t.resources.quickReferencesTitle}
               </div>
               <ul className='space-y-2 text-sm text-muted-foreground'>
-                <li>• Validate execution states and transitions.</li>
-                <li>• Persist source snapshot before queueing.</li>
-                <li>• Keep retry and idempotency logic explicit.</li>
+                {t.resources.quickReferences.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
               </ul>
             </section>
 
             <section className='rounded-xl border bg-muted/30 p-4'>
               <div className='mb-2 flex items-center gap-2 text-sm font-semibold'>
-                <MessageSquareMore className='h-4 w-4' /> Mentor tip
+                <MessageSquareMore className='h-4 w-4' /> {t.resources.mentorTipTitle}
               </div>
-              <p className='text-sm text-muted-foreground'>
-                Describe trade-offs in your notes: MVP isolation vs production sandboxing, and polling vs event-driven updates.
-              </p>
+              <p className='text-sm text-muted-foreground'>{t.resources.mentorTip}</p>
             </section>
 
             <Separator />
 
             <section>
               <div className='mb-2 flex items-center gap-2 text-sm font-semibold'>
-                <Lightbulb className='h-4 w-4' /> Interview Notes
+                <Lightbulb className='h-4 w-4' /> {t.resources.notesTitle}
               </div>
               <Textarea
                 value={notes}
                 onChange={(event) => onNotesChange(event.target.value)}
                 rows={9}
-                placeholder='Capture assumptions, edge cases, and final explanation for reviewers.'
+                placeholder={t.resources.notesPlaceholder}
                 aria-label='Simulation notes'
               />
             </section>

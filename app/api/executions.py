@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.execution import ExecutionQueuedResponse, ExecutionResponse
+from app.schemas.execution import (
+    ExecutionQueuedResponse,
+    ExecutionResponse,
+    ExecutionRunRequest,
+)
 from app.services.execution_service import (
     ExecutionNotFoundError,
     ExecutionQueueEnqueueError,
@@ -23,11 +27,16 @@ router = APIRouter(tags=["executions"])
     status_code=status.HTTP_202_ACCEPTED,
 )
 def run_code_session_endpoint(
+    payload: ExecutionRunRequest | None = None,
     session_id: int = Path(..., gt=0),
     db: Session = Depends(get_db),
 ) -> ExecutionQueuedResponse:
     try:
-        execution = create_execution_and_enqueue(db=db, session_id=session_id)
+        execution = create_execution_and_enqueue(
+            db=db,
+            session_id=session_id,
+            stdin_data=payload.stdin_data if payload is not None else None,
+        )
     except ExecutionSessionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except UnsupportedExecutionLanguageError as exc:

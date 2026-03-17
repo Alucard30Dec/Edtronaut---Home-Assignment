@@ -55,3 +55,10 @@ def autosave_code_session(
     db.commit()
     db.refresh(session)
     return session
+
+
+def get_code_session(db: Session, session_id: int) -> CodeSession:
+    session = db.get(CodeSession, session_id)
+    if session is None:
+        raise CodeSessionNotFoundError(f"Session {session_id} does not exist.")
+    return session

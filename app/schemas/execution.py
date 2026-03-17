@@ -22,6 +22,10 @@ class ExecutionQueuedResponse(BaseModel):
     status: ExecutionStatus
 
 
+class ExecutionRunRequest(BaseModel):
+    stdin_data: str | None = None
+
+
 class ExecutionResponse(ORMModel):
     id: int
     session_id: int

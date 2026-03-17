@@ -119,7 +119,7 @@ class ExecutionsAPITestCase(unittest.TestCase):
         run_payload = run_response.json()
         self.assertEqual(run_payload["status"], "QUEUED")
         self.assertIn("execution_id", run_payload)
-        mock_enqueue.assert_called_once_with(run_payload["execution_id"])
+        mock_enqueue.assert_called_once_with(run_payload["execution_id"], stdin_data=None)
 
         get_response = self.client.get(f"/executions/{run_payload['execution_id']}")
         self.assertEqual(get_response.status_code, 200)
@@ -128,6 +128,20 @@ class ExecutionsAPITestCase(unittest.TestCase):
         self.assertEqual(execution_payload["session_id"], session_id)
         self.assertEqual(execution_payload["status"], "QUEUED")
         self.assertEqual(execution_payload["source_code_snapshot"], "print('hello world')")
+
+    def test_run_with_stdin_payload_for_online_judge_mode(self) -> None:
+        session_id = self._create_session()
+
+        with patch("app.queue.enqueue_execution_job", return_value=object()) as mock_enqueue:
+            run_response = self.client.post(
+                f"/code-sessions/{session_id}/run",
+                json={"stdin_data": "17\n"},
+            )
+
+        self.assertEqual(run_response.status_code, 202)
+        run_payload = run_response.json()
+        self.assertEqual(run_payload["status"], "QUEUED")
+        mock_enqueue.assert_called_once_with(run_payload["execution_id"], stdin_data="17\n")
 
     def test_run_enqueue_failure_marks_failed_and_returns_503(self) -> None:
         session_id = self._create_session()

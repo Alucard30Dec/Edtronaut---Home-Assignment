@@ -3,24 +3,27 @@ import { CheckCircle2, CircleDashed, Flag, ListChecks } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/lib/language';
 
 type ModuleSidebarProps = {
   sessionReady: boolean;
 };
 
-const modules = [
-  { id: 'm1', title: 'Read Brief', complete: true },
-  { id: 'm2', title: 'Implement Solution', complete: true },
-  { id: 'm3', title: 'Run & Verify', complete: false },
-  { id: 'm4', title: 'Submit Notes', complete: false },
-];
-
 export function ModuleSidebar({ sessionReady }: ModuleSidebarProps) {
+  const { t } = useLanguage();
+  const [module1, module2, module3, module4] = t.modules.items;
+  const modules = [
+    { id: 'm1', title: module1, complete: true },
+    { id: 'm2', title: module2, complete: true },
+    { id: 'm3', title: module3, complete: false },
+    { id: 'm4', title: module4, complete: false },
+  ];
+
   return (
     <Card className='h-[calc(100vh-7.5rem)]'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-sm'>
-          <ListChecks className='h-4 w-4' /> Simulation Modules
+          <ListChecks className='h-4 w-4' /> {t.modules.title}
         </CardTitle>
       </CardHeader>
       <CardContent className='h-[calc(100%-4.5rem)] p-0'>
@@ -43,22 +46,21 @@ export function ModuleSidebar({ sessionReady }: ModuleSidebarProps) {
           <Separator className='my-5' />
 
           <div className='space-y-3 text-sm'>
-            <h4 className='font-semibold'>Simulation Context</h4>
-            <p className='text-muted-foreground'>
-              You are the backend engineer on a hiring platform team. The interviewer expects robust async execution,
-              clean autosave, and traceable run history.
-            </p>
+            <h4 className='font-semibold'>{t.modules.contextTitle}</h4>
+            <p className='text-muted-foreground'>{t.modules.contextDescription}</p>
             <div className='rounded-xl border bg-muted/40 p-3'>
               <div className='flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground'>
-                <Flag className='h-3.5 w-3.5' /> Current objective
+                <Flag className='h-3.5 w-3.5' /> {t.modules.objectiveTitle}
               </div>
-              <p className='mt-2 text-sm'>
-                Build a Python-first execution flow and show stable behavior under repeated runs and autosave updates.
-              </p>
+              <p className='mt-2 text-sm'>{t.modules.objectiveDescription}</p>
             </div>
             <div className='rounded-xl border bg-muted/40 p-3'>
-              <div className='text-xs font-semibold uppercase text-muted-foreground'>Workspace status</div>
-              <p className='mt-2 text-sm'>{sessionReady ? 'Session is active and ready to execute.' : 'Starting session...'}</p>
+              <div className='text-xs font-semibold uppercase text-muted-foreground'>{t.modules.workspaceStatusTitle}</div>
+              <p className='mt-2 text-sm'>
+                {sessionReady
+                  ? t.modules.workspaceReady
+                  : t.modules.workspaceStarting}
+              </p>
             </div>
           </div>
         </ScrollArea>

@@ -8,13 +8,14 @@
 
 ## End-to-End Request Flow
 1. Client creates a code session via `POST /code-sessions`.
-2. Client autosaves source via `PATCH /code-sessions/{session_id}`.
-3. Client triggers run via `POST /code-sessions/{session_id}/run`.
-4. API validates safety limits and stores an `executions` row with `QUEUED`.
-5. API enqueues job to RQ and returns immediately (`execution_id`, `QUEUED`).
-6. Worker atomically transitions `QUEUED -> RUNNING`.
-7. Worker executes `source_code_snapshot` and persists terminal state/result.
-8. Client polls `GET /executions/{execution_id}` for latest status/output.
+2. Client may resume a previous session via `GET /code-sessions/{session_id}`.
+3. Client autosaves source via `PATCH /code-sessions/{session_id}`.
+4. Client triggers run via `POST /code-sessions/{session_id}/run` (optional `stdin_data` payload for testcase-driven UI execution).
+5. API validates safety limits and stores an `executions` row with `QUEUED`.
+6. API enqueues job to RQ and returns immediately (`execution_id`, `QUEUED`).
+7. Worker atomically transitions `QUEUED -> RUNNING`.
+8. Worker executes `source_code_snapshot` and persists terminal state/result.
+9. Client polls `GET /executions/{execution_id}` for latest status/output.
 
 ## Data Model
 - `code_sessions`

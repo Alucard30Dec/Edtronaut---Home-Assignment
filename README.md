@@ -99,11 +99,22 @@ curl -X POST http://localhost:8000/code-sessions \
 ```bash
 curl -X POST http://localhost:8000/code-sessions/1/run
 ```
+Optional stdin payload (used by demo UI testcase runner):
+```bash
+curl -X POST http://localhost:8000/code-sessions/1/run \
+  -H "Content-Type: application/json" \
+  -d '{"stdin_data":"17\n"}'
+```
 If queue enqueue fails (for example Redis is unavailable), the API returns `503` and the created execution row is marked as `FAILED` with an error message.
 
 3. Check execution status
 ```bash
 curl http://localhost:8000/executions/1
+```
+
+4. Reload existing session
+```bash
+curl http://localhost:8000/code-sessions/1
 ```
 
 ## Manual Run Commands

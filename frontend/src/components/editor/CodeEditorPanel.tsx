@@ -1,8 +1,9 @@
 import Editor from '@monaco-editor/react';
-import { Keyboard, Save } from 'lucide-react';
+import { AlertCircle, Keyboard, Loader2 } from 'lucide-react';
 
 import type { AutosaveState } from '@/hooks/useDebouncedAutosave';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/lib/language';
 import {
   Select,
   SelectContent,
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 
 type CodeEditorPanelProps = {
   code: string;
@@ -20,11 +20,13 @@ type CodeEditorPanelProps = {
   onLanguageChange: (value: 'python') => void;
 };
 
-function autosaveLabel(state: AutosaveState) {
-  if (state === 'saving') return 'Saving draft...';
-  if (state === 'saved') return 'Draft saved';
-  if (state === 'error') return 'Autosave error';
-  return 'Editor ready';
+function autosaveLabel(
+  state: AutosaveState,
+  labels: { editorSaving: string; editorSaved: string; editorError: string; editorReady: string },
+) {
+  if (state === 'saving') return labels.editorSaving;
+  if (state === 'error') return labels.editorError;
+  return null;
 }
 
 export function CodeEditorPanel({
@@ -34,36 +36,51 @@ export function CodeEditorPanel({
   onCodeChange,
   onLanguageChange,
 }: CodeEditorPanelProps) {
+  const { t } = useLanguage();
+  const autosaveText = autosaveLabel(autosaveState, t.autosave);
+
   return (
-    <Card className='flex min-h-[380px] flex-col'>
-      <CardHeader className='pb-4'>
+    <Card className='overflow-hidden border bg-card shadow-panel'>
+      <CardHeader className='border-b bg-muted/20 py-3'>
         <div className='flex flex-wrap items-center justify-between gap-4'>
-          <CardTitle>Coding Workspace</CardTitle>
+          <CardTitle>{t.editor.title}</CardTitle>
           <div className='flex items-center gap-3'>
             <div className='w-32'>
               <Select value={language} onValueChange={(value) => onLanguageChange(value as 'python')}>
-                <SelectTrigger aria-label='Programming language'>
-                  <SelectValue placeholder='Language' />
+                <SelectTrigger aria-label={t.editor.languageAria}>
+                  <SelectValue placeholder={t.editor.languagePlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='python'>Python (MVP)</SelectItem>
+                  <SelectItem value='python'>{t.editor.pythonMvp}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+            <div className='rounded-lg border bg-background/70 px-2 py-1 text-xs text-muted-foreground'>
               <Keyboard className='h-3.5 w-3.5' />
-              Ctrl/Cmd + Enter to run
+              <span className='ml-1'>{t.editor.shortcutHint}</span>
             </div>
           </div>
         </div>
       </CardHeader>
-      <Separator />
-      <CardContent className='flex flex-1 flex-col gap-3 pt-4'>
-        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-          <Save className='h-3.5 w-3.5' />
-          {autosaveLabel(autosaveState)}
-        </div>
-        <div className='min-h-[300px] flex-1 overflow-hidden rounded-xl border'>
+      <CardContent className='space-y-2 p-3'>
+        {autosaveText ? (
+          <div
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${
+              autosaveState === 'error'
+                ? 'border-red-200 bg-red-50 text-red-700'
+                : 'border-amber-200 bg-amber-50 text-amber-700'
+            }`}
+          >
+            {autosaveState === 'error' ? (
+              <AlertCircle className='h-3.5 w-3.5' />
+            ) : (
+              <Loader2 className='h-3.5 w-3.5 animate-spin' />
+            )}
+            {autosaveText}
+          </div>
+        ) : null}
+
+        <div className='h-[460px] overflow-hidden rounded-xl border'>
           <Editor
             height='100%'
             defaultLanguage='python'
@@ -74,6 +91,7 @@ export function CodeEditorPanel({
               minimap: { enabled: false },
               fontSize: 14,
               lineHeight: 22,
+              readOnly: false,
               automaticLayout: true,
               scrollBeyondLastLine: false,
               renderLineHighlight: 'gutter',

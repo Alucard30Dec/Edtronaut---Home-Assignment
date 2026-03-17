@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/execution/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/lib/language';
 import type { ExecutionHistoryItem, ExecutionInfo } from '@/types/api';
 
 type ExecutionTabsProps = {
@@ -15,11 +16,13 @@ type ExecutionTabsProps = {
 };
 
 export function ExecutionTabs({ execution, history, isPolling, requestErrorMessage }: ExecutionTabsProps) {
+  const { t } = useLanguage();
+
   return (
     <Card>
       <CardHeader className='pb-3'>
         <div className='flex items-center justify-between gap-3'>
-          <CardTitle>Execution Results</CardTitle>
+          <CardTitle>{t.execution.title}</CardTitle>
           {execution ? (
             <div className='flex items-center gap-2'>
               <StatusBadge status={execution.status} />
@@ -36,31 +39,31 @@ export function ExecutionTabs({ execution, history, isPolling, requestErrorMessa
       <CardContent>
         {!execution ? (
           <EmptyState
-            title='No execution yet'
-            description='Run code to view status, stdout, stderr, and execution history.'
+            title={t.execution.emptyTitle}
+            description={t.execution.emptyDescription}
             icon={<TerminalSquare className='h-5 w-5 text-muted-foreground' />}
           />
         ) : (
           <Tabs defaultValue='status'>
             <TabsList>
-              <TabsTrigger value='status'>Status</TabsTrigger>
-              <TabsTrigger value='stdout'>Stdout</TabsTrigger>
-              <TabsTrigger value='stderr'>Stderr</TabsTrigger>
-              <TabsTrigger value='history'>Execution History</TabsTrigger>
+              <TabsTrigger value='status'>{t.execution.tabStatus}</TabsTrigger>
+              <TabsTrigger value='stdout'>{t.execution.tabStdout}</TabsTrigger>
+              <TabsTrigger value='stderr'>{t.execution.tabStderr}</TabsTrigger>
+              <TabsTrigger value='history'>{t.execution.tabHistory}</TabsTrigger>
             </TabsList>
 
             <TabsContent value='status'>
               <div className='grid gap-4 rounded-xl border bg-muted/40 p-4 text-sm'>
                 <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground'>Execution ID</span>
+                  <span className='text-muted-foreground'>{t.execution.executionId}</span>
                   <code className='code-font text-xs'>{execution.executionId}</code>
                 </div>
                 <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground'>Current Status</span>
+                  <span className='text-muted-foreground'>{t.execution.currentStatus}</span>
                   <StatusBadge status={execution.status} />
                 </div>
                 <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground'>Execution Time</span>
+                  <span className='text-muted-foreground'>{t.execution.executionTime}</span>
                   <span>{typeof execution.executionTimeMs === 'number' ? `${execution.executionTimeMs} ms` : '-'}</span>
                 </div>
                 {requestErrorMessage ? (
@@ -74,7 +77,7 @@ export function ExecutionTabs({ execution, history, isPolling, requestErrorMessa
             <TabsContent value='stdout'>
               <ScrollArea className='h-52 rounded-xl border bg-muted/30 p-3'>
                 <pre className='code-font whitespace-pre-wrap text-sm'>
-                  {execution.stdout || 'No stdout output for this execution.'}
+                  {execution.stdout || t.execution.noStdout}
                 </pre>
               </ScrollArea>
             </TabsContent>
@@ -82,7 +85,7 @@ export function ExecutionTabs({ execution, history, isPolling, requestErrorMessa
             <TabsContent value='stderr'>
               <ScrollArea className='h-52 rounded-xl border bg-muted/30 p-3'>
                 <pre className='code-font whitespace-pre-wrap text-sm text-red-700'>
-                  {execution.stderr || 'No stderr output for this execution.'}
+                  {execution.stderr || t.execution.noStderr}
                 </pre>
               </ScrollArea>
             </TabsContent>
@@ -91,7 +94,7 @@ export function ExecutionTabs({ execution, history, isPolling, requestErrorMessa
               <ScrollArea className='h-52 rounded-xl border'>
                 <div className='space-y-2 p-3'>
                   {history.length === 0 ? (
-                    <p className='text-sm text-muted-foreground'>Execution history will appear here.</p>
+                    <p className='text-sm text-muted-foreground'>{t.execution.historyEmpty}</p>
                   ) : (
                     history.map((item) => (
                       <div key={item.executionId} className='flex items-center justify-between rounded-lg bg-muted/40 p-3 text-sm'>

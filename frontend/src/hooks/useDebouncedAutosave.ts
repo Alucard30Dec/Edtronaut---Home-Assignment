@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
 import { ApiError, autosaveCodeSession } from '@/lib/api';
+import { useLanguage } from '@/lib/language';
 import type { SessionInfo } from '@/types/api';
 
 export type AutosaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -14,14 +15,14 @@ type UseDebouncedAutosaveProps = {
   onSaved: (session: SessionInfo) => void;
 };
 
-function getErrorMessage(error: unknown) {
+function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (error instanceof ApiError) {
     return error.detail || error.message;
   }
   if (error instanceof Error) {
     return error.message;
   }
-  return 'Autosave failed.';
+  return fallbackMessage;
 }
 
 export function useDebouncedAutosave({
@@ -31,6 +32,7 @@ export function useDebouncedAutosave({
   debounceMs = 1200,
   onSaved,
 }: UseDebouncedAutosaveProps) {
+  const { t } = useLanguage();
   const [state, setState] = useState<AutosaveState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const lastSavedCodeRef = useRef(sourceCode);
@@ -38,7 +40,7 @@ export function useDebouncedAutosave({
   const autosaveMutation = useMutation({
     mutationFn: async (codeToSave: string) => {
       if (!session) {
-        throw new Error('Session not available for autosave.');
+        throw new Error(t.appShell.sessionNotReady);
       }
 
       return autosaveCodeSession({
@@ -67,11 +69,11 @@ export function useDebouncedAutosave({
         return savedSession;
       } catch (error) {
         setState('error');
-        setErrorMessage(getErrorMessage(error));
+        setErrorMessage(getErrorMessage(error, t.autosave.failedTooltip));
         throw error;
       }
     },
-    [autosaveMutation, enabled, onSaved, session],
+    [autosaveMutation, enabled, onSaved, session, t.autosave.failedTooltip],
   );
 
   useEffect(() => {

@@ -104,6 +104,12 @@ class CodeSessionsAPITestCase(unittest.TestCase):
         self.assertEqual(autosaved["current_source_code"], "print('autosaved')")
         self.assertEqual(autosaved["version"], version + 1)
 
+        get_response = self.client.get(f"/code-sessions/{session_id}")
+        self.assertEqual(get_response.status_code, 200)
+        fetched = get_response.json()
+        self.assertEqual(fetched["id"], session_id)
+        self.assertEqual(fetched["current_source_code"], "print('autosaved')")
+
 
 if __name__ == "__main__":
     unittest.main()

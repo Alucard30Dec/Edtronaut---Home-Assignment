@@ -12,6 +12,7 @@ class PythonRunnerTestCase(unittest.TestCase):
     def test_successful_execution(self) -> None:
         result = run_python_code(
             "print('hello from runner')",
+            stdin_data=None,
             timeout_seconds=2,
             memory_limit_mb=256,
             python_executable="python3",
@@ -23,6 +24,7 @@ class PythonRunnerTestCase(unittest.TestCase):
     def test_runtime_error_execution(self) -> None:
         result = run_python_code(
             "raise ValueError('boom')",
+            stdin_data=None,
             timeout_seconds=2,
             memory_limit_mb=256,
             python_executable="python3",
@@ -33,11 +35,23 @@ class PythonRunnerTestCase(unittest.TestCase):
     def test_timeout_execution(self) -> None:
         result = run_python_code(
             "while True:\n    pass",
+            stdin_data=None,
             timeout_seconds=1,
             memory_limit_mb=256,
             python_executable="python3",
         )
         self.assertEqual(result.outcome, RUN_OUTCOME_TIMEOUT)
+
+    def test_execution_with_stdin(self) -> None:
+        result = run_python_code(
+            "n = int(input().strip())\nprint(n * 2)",
+            stdin_data="7\n",
+            timeout_seconds=2,
+            memory_limit_mb=256,
+            python_executable="python3",
+        )
+        self.assertEqual(result.outcome, RUN_OUTCOME_COMPLETED)
+        self.assertEqual(result.stdout.strip(), "14")
 
 
 if __name__ == "__main__":

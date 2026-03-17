@@ -13,6 +13,7 @@ from app.services.code_session_service import (
     UnsupportedLanguageError,
     autosave_code_session,
     create_code_session,
+    get_code_session,
 )
 
 router = APIRouter(prefix="/code-sessions", tags=["code-sessions"])
@@ -43,5 +44,18 @@ def autosave_code_session_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except StaleAutosaveError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    return CodeSessionResponse.from_orm_model(session)
+
+
+@router.get("/{session_id}", response_model=CodeSessionResponse)
+def get_code_session_endpoint(
+    session_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+) -> CodeSessionResponse:
+    try:
+        session = get_code_session(db, session_id=session_id)
+    except CodeSessionNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
     return CodeSessionResponse.from_orm_model(session)

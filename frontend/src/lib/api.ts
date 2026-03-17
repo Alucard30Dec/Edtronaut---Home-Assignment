@@ -94,6 +94,7 @@ function toExecutionInfo(raw: RawExecutionResponse): ExecutionInfo {
 type MockExecution = ExecutionInfo & {
   createdAtMs: number;
   sourceCodeSnapshot: string;
+  stdinData?: string;
 };
 
 const mockStore: {
@@ -129,6 +130,13 @@ async function mockCreateSession(initialCode: string): Promise<SessionInfo> {
   return session;
 }
 
+async function mockGetSession(sessionId: string): Promise<SessionInfo> {
+  if (!mockStore.session || mockStore.session.sessionId !== sessionId) {
+    throw new ApiError('Session not found in mock store.', 404);
+  }
+  return mockStore.session;
+}
+
 async function mockAutosave(payload: AutosavePayload): Promise<SessionInfo> {
   if (!mockStore.session || mockStore.session.sessionId !== payload.sessionId) {
     throw new ApiError('Session not found in mock store.', 404);
@@ -142,7 +150,39 @@ async function mockAutosave(payload: AutosavePayload): Promise<SessionInfo> {
   return mockStore.session;
 }
 
-async function mockRun(sessionId: string): Promise<{ executionId: string; status: ExecutionStatus }> {
+function evaluateMockPrimeOutput(stdinData: string | undefined): string {
+  if (!stdinData) {
+    return '';
+  }
+
+  const parsed = Number(String(stdinData).trim());
+  if (!Number.isInteger(parsed)) {
+    return '';
+  }
+
+  if (parsed < 2) {
+    return 'NO\n';
+  }
+  if (parsed === 2) {
+    return 'YES\n';
+  }
+  if (parsed % 2 === 0) {
+    return 'NO\n';
+  }
+
+  const limit = Math.floor(Math.sqrt(parsed));
+  for (let divisor = 3; divisor <= limit; divisor += 2) {
+    if (parsed % divisor === 0) {
+      return 'NO\n';
+    }
+  }
+  return 'YES\n';
+}
+
+async function mockRun(
+  sessionId: string,
+  stdinData?: string,
+): Promise<{ executionId: string; status: ExecutionStatus }> {
   if (!mockStore.session || mockStore.session.sessionId !== sessionId) {
     throw new ApiError('Session not found in mock store.', 404);
   }
@@ -159,6 +199,7 @@ async function mockRun(sessionId: string): Promise<{ executionId: string; status
     createdAtMs: Date.now(),
     queuedAt: now,
     sourceCodeSnapshot: mockStore.session.sourceCode,
+    stdinData,
   });
 
   return { executionId, status: 'QUEUED' };
@@ -173,9 +214,7 @@ async function mockExecution(executionId: string): Promise<ExecutionInfo> {
   const elapsed = Date.now() - entry.createdAtMs;
   if (elapsed > 2_200) {
     entry.status = 'COMPLETED';
-    entry.stdout = entry.sourceCodeSnapshot.includes('Hello')
-      ? 'Hello World\\n'
-      : 'Mock execution completed successfully.\\n';
+    entry.stdout = evaluateMockPrimeOutput(entry.stdinData);
     entry.executionTimeMs = 150;
     entry.finishedAt = new Date().toISOString();
   } else if (elapsed > 700) {
@@ -221,6 +260,16 @@ export async function createCodeSession(initialCode: string): Promise<SessionInf
   );
 }
 
+export async function getCodeSession(sessionId: string): Promise<SessionInfo> {
+  return withMockFallback(
+    async () => {
+      const raw = await request<RawSessionResponse>(`/code-sessions/${sessionId}`);
+      return toSessionInfo(raw);
+    },
+    () => mockGetSession(sessionId),
+  );
+}
+
 export async function autosaveCodeSession(payload: AutosavePayload): Promise<SessionInfo> {
   return withMockFallback(
     async () => {
@@ -241,11 +290,13 @@ export async function autosaveCodeSession(payload: AutosavePayload): Promise<Ses
 
 export async function runCodeSession(
   sessionId: string,
+  stdinData?: string,
 ): Promise<{ executionId: string; status: ExecutionStatus }> {
   return withMockFallback(
     async () => {
       const raw = await request<RawRunResponse>(`/code-sessions/${sessionId}/run`, {
         method: 'POST',
+        body: stdinData !== undefined ? JSON.stringify({ stdin_data: stdinData }) : undefined,
       });
 
       return {
@@ -253,7 +304,7 @@ export async function runCodeSession(
         status: raw.status ?? 'QUEUED',
       };
     },
-    () => mockRun(sessionId),
+    () => mockRun(sessionId, stdinData),
   );
 }
 

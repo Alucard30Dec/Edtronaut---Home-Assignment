@@ -43,13 +43,15 @@ VITE_ENABLE_MOCK_FALLBACK=false
 ## Backend API Mapping
 
 - Session bootstrap:
-  - UI action: auto-start session on first load
+  - UI action: resume last session on reload if available, otherwise auto-start new session
   - API: `POST /code-sessions`
+  - API (resume): `GET /code-sessions/{session_id}`
 - Autosave:
   - UI action: debounce save while typing
   - API: `PATCH /code-sessions/{session_id}`
 - Run code:
-  - UI action: Run button or `Ctrl/Cmd + Enter`
+  - UI action: Run button or `Ctrl/Cmd + Enter` triggers all visible test cases in one click
+  - UI behavior: testcase jobs are submitted sequentially with a small gap to respect backend run-frequency policy
   - API: `POST /code-sessions/{session_id}/run`
 - Execution polling:
   - UI action: auto-poll every 1s while `QUEUED`/`RUNNING`
@@ -70,12 +72,14 @@ VITE_ENABLE_MOCK_FALLBACK=false
 - Polling (1 second) is used instead of WebSocket for MVP simplicity.
 - Python is the only language in UI to match backend MVP scope.
 - Mock mode is optional and strictly fallback for backend unavailability, not for masking API validation errors.
+- Session recovery uses `localStorage` to keep a stable `session_id` and reload saved code state from backend.
 - This is a demo layer, not a full product surface (no auth, no grading, no unrelated modules).
 
 ## Backend Assumptions
 
 - Backend exposes:
   - `POST /code-sessions`
+  - `GET /code-sessions/{session_id}`
   - `PATCH /code-sessions/{session_id}`
   - `POST /code-sessions/{session_id}/run`
   - `GET /executions/{execution_id}`

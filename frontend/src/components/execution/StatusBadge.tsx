@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/lib/language';
 
 type StatusBadgeProps = {
   status: string;
@@ -18,5 +19,9 @@ function resolveVariant(status: string): 'default' | 'secondary' | 'success' | '
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  return <Badge variant={resolveVariant(status)}>{status}</Badge>;
+  const { t } = useLanguage();
+  const normalized = status.toUpperCase();
+  const label = t.statusLabels[normalized] ?? status;
+
+  return <Badge variant={resolveVariant(status)}>{label}</Badge>;
 }
