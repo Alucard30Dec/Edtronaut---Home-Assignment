@@ -61,6 +61,7 @@ python -m app.workers.rq_worker
 | `EXECUTION_TIMEOUT_SECONDS` | Per-run timeout | `5` |
 | `EXECUTION_MEMORY_LIMIT_MB` | Best-effort memory cap | `128` |
 | `PYTHON_RUNNER_EXECUTABLE` | Python binary used by runner | `python3` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated frontend origins allowed by API CORS | `http://localhost:5173,http://127.0.0.1:5173` |
 | `EXECUTION_ALLOWED_LANGUAGES` | Allowed execution languages | `python` |
 | `EXECUTION_MAX_SOURCE_SIZE_BYTES` | Max source snapshot size | `50000` |
 | `EXECUTION_MIN_INTERVAL_SECONDS` | Min interval between runs per session | `1` |
@@ -138,6 +139,10 @@ See `DESIGN.md` for:
 - idempotency
 - retry/failure strategy
 - scalability, trade-offs, and production gaps
+
+## Frontend Demo UI
+The thin React demo UI used to showcase session/autosave/run/polling flows is in [`frontend/`](frontend).
+Run and environment instructions are documented in [`frontend/README.md`](frontend/README.md).
 
 ## MVP Caveat
 Execution isolation is MVP-level. The subprocess runner is not a production-grade sandbox for hostile multi-tenant workloads.

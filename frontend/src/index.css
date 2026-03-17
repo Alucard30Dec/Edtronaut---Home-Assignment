@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply text-foreground antialiased;
+  font-family: 'Plus Jakarta Sans', 'Avenir Next', 'Segoe UI', sans-serif;
+  background-color: hsl(210 20% 98%);
+  background-image:
+    radial-gradient(circle at 12% -8%, rgba(37, 99, 235, 0.14), transparent 32%),
+    radial-gradient(circle at 88% 0%, rgba(15, 23, 42, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.94), rgba(236, 242, 249, 0.9));
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.code-font {
+  font-family: 'JetBrains Mono', 'Iosevka Web', 'SFMono-Regular', Consolas, monospace;
+}
+
+.bg-app-surface {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.74)),
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 46%);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 300ms ease-out both;
+}
