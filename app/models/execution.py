@@ -21,7 +21,7 @@ class Execution(Base):
         nullable=False,
         index=True,
     )
-    status: Mapped[str] = mapped_column(String(30), nullable=False, default="queued")
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="QUEUED")
     # Keep an immutable source snapshot per run for reproducibility/debugging.
     source_code_snapshot: Mapped[str] = mapped_column(Text, nullable=False)
     stdout: Mapped[str | None] = mapped_column(Text, nullable=True)

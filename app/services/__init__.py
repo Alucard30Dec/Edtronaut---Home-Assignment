@@ -7,6 +7,12 @@ from app.services.code_session_service import (
     autosave_code_session,
     create_code_session,
 )
+from app.services.execution_service import (
+    ExecutionNotFoundError,
+    ExecutionSessionNotFoundError,
+    create_execution_and_enqueue,
+    get_execution_by_id,
+)
 
 __all__ = [
     "create_code_session",
@@ -14,4 +20,8 @@ __all__ = [
     "UnsupportedLanguageError",
     "CodeSessionNotFoundError",
     "StaleAutosaveError",
+    "create_execution_and_enqueue",
+    "get_execution_by_id",
+    "ExecutionNotFoundError",
+    "ExecutionSessionNotFoundError",
 ]

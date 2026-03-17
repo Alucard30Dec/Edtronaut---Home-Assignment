@@ -16,6 +16,8 @@ class Settings:
     app_name: str
     environment: str
     database_url: str
+    redis_url: str
+    rq_queue_name: str
 
 
 @lru_cache
@@ -27,6 +29,8 @@ def get_settings() -> Settings:
             "DATABASE_URL",
             "postgresql+psycopg2://postgres:postgres@localhost:5432/live_exec",
         ),
+        redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+        rq_queue_name=os.getenv("RQ_QUEUE_NAME", "code_execution"),
     )
 
 

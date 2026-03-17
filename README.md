@@ -24,6 +24,12 @@ This repository contains the backend for the take-home assignment focused on sec
 - `POST /code-sessions`: create a new `ACTIVE` code session (MVP language: `python` only).
 - `PATCH /code-sessions/{session_id}`: lightweight autosave for `current_source_code` with optimistic version check.
 
+## Execution Lifecycle (Phase 4)
+- `POST /code-sessions/{session_id}/run` creates an execution row first with status `QUEUED`, then enqueues a background RQ job.
+- `GET /executions/{execution_id}` returns the latest persisted execution state and output fields.
+- Lifecycle states stay aligned with: `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `TIMEOUT`.
+- `source_code_snapshot` is stored to preserve the exact source submitted at run-time, so later edits in the session do not alter execution history.
+
 ## Planned Milestones
 1. Configuration management and environment loading
 2. PostgreSQL schema and migrations setup
