@@ -20,6 +20,10 @@ This repository contains the backend for the take-home assignment focused on sec
 - SQLAlchemy foundation is in place with shared base metadata and DB session management in `app/db/`.
 - Initial PostgreSQL-oriented models are added for `code_sessions` and `executions`, including `source_code_snapshot` for immutable run history.
 
+## API (Phase 3)
+- `POST /code-sessions`: create a new `ACTIVE` code session (MVP language: `python` only).
+- `PATCH /code-sessions/{session_id}`: lightweight autosave for `current_source_code` with optimistic version check.
+
 ## Planned Milestones
 1. Configuration management and environment loading
 2. PostgreSQL schema and migrations setup
