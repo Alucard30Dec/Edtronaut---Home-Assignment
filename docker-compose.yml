@@ -1,0 +1,83 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: live-exec-api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      APP_NAME: Live Code Execution & Management API
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/live_exec
+      REDIS_URL: redis://redis:6379/0
+      RQ_QUEUE_NAME: code_execution
+      EXECUTION_TIMEOUT_SECONDS: "5"
+      EXECUTION_MEMORY_LIMIT_MB: "128"
+      PYTHON_RUNNER_EXECUTABLE: python3
+      EXECUTION_ALLOWED_LANGUAGES: python
+      EXECUTION_MAX_SOURCE_SIZE_BYTES: "50000"
+      EXECUTION_MIN_INTERVAL_SECONDS: "1"
+      EXECUTION_INFRA_MAX_RETRIES: "1"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: live-exec-worker
+    command: ["python", "-m", "app.workers.rq_worker"]
+    environment:
+      APP_NAME: Live Code Execution & Management API
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/live_exec
+      REDIS_URL: redis://redis:6379/0
+      RQ_QUEUE_NAME: code_execution
+      EXECUTION_TIMEOUT_SECONDS: "5"
+      EXECUTION_MEMORY_LIMIT_MB: "128"
+      PYTHON_RUNNER_EXECUTABLE: python3
+      EXECUTION_ALLOWED_LANGUAGES: python
+      EXECUTION_MAX_SOURCE_SIZE_BYTES: "50000"
+      EXECUTION_MIN_INTERVAL_SECONDS: "1"
+      EXECUTION_INFRA_MAX_RETRIES: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: live-exec-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: live-exec-postgres
+    environment:
+      POSTGRES_DB: live_exec
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d live_exec"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
