@@ -30,6 +30,16 @@ This repository contains the backend for the take-home assignment focused on sec
 - Lifecycle states stay aligned with: `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `TIMEOUT`.
 - `source_code_snapshot` is stored to preserve the exact source submitted at run-time, so later edits in the session do not alter execution history.
 
+## Execution Worker and Isolation Strategy (Phase 5)
+- RQ worker entrypoint: `python -m app.workers.rq_worker`.
+- Worker flow: load execution -> atomically move `QUEUED` to `RUNNING` -> execute Python code -> persist `COMPLETED` / `FAILED` / `TIMEOUT`.
+- Duplicate processing is reduced by an atomic status transition (`QUEUED` only). If a job was already taken, later workers skip it.
+- Runner executes Python source with `subprocess`, captures `stdout`/`stderr`, and enforces timeout.
+- Memory limit is best-effort via `RLIMIT_AS` on POSIX environments; it may not apply in all platforms.
+- `source_code_snapshot` is executed instead of mutable session source to keep each run reproducible and auditable.
+- MVP caveat: this is not a production-grade sandbox. It does not provide strong multi-tenant isolation against malicious code.
+- Production caveat: use container/VM isolation, stricter syscall/network controls, hardened resource governance, and dedicated sandbox infra.
+
 ## Planned Milestones
 1. Configuration management and environment loading
 2. PostgreSQL schema and migrations setup
