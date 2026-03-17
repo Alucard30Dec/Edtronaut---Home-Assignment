@@ -5,3 +5,4 @@ redis
 rq
 python-dotenv
 SQLAlchemy>=2.0
+httpx>=0.27,<1.0

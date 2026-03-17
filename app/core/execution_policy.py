@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -73,14 +75,21 @@ def calculate_retry_after_seconds(
     *,
     last_queued_at: datetime | None,
     now: datetime,
-    min_interval_seconds: int,
-) -> int:
+    min_interval_seconds: float,
+    now_monotonic: float | None = None,
+    monotonic_clock: Callable[[], float] = time.monotonic,
+) -> float:
     if min_interval_seconds <= 0 or last_queued_at is None:
-        return 0
+        return 0.0
 
     if last_queued_at.tzinfo is None:
         last_queued_at = last_queued_at.replace(tzinfo=timezone.utc)
 
-    elapsed = (now - last_queued_at).total_seconds()
-    remaining = int(min_interval_seconds - elapsed)
-    return remaining if remaining > 0 else 0
+    elapsed_seconds = max(0.0, (now - last_queued_at).total_seconds())
+    remaining_seconds = float(min_interval_seconds) - elapsed_seconds
+    if remaining_seconds <= 0:
+        return 0.0
+
+    reference_monotonic = now_monotonic if now_monotonic is not None else monotonic_clock()
+    deadline_monotonic = reference_monotonic + remaining_seconds
+    return max(0.0, deadline_monotonic - monotonic_clock())

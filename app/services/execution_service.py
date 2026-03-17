@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import math
+import time
 from datetime import datetime, timezone
 
 from sqlalchemy import select, update
@@ -43,14 +45,22 @@ class ExecutionSourceTooLargeError(ValueError):
 
 
 class ExecutionRateLimitedError(ValueError):
-    def __init__(self, retry_after_seconds: int) -> None:
+    def __init__(self, retry_after_seconds: float) -> None:
+        self.retry_after_seconds = max(0.0, retry_after_seconds)
+        self.retry_after_header_seconds = max(1, math.ceil(self.retry_after_seconds))
         super().__init__(
-            f"Run requested too frequently. Retry after {retry_after_seconds} seconds."
+            "Run requested too frequently. "
+            f"Retry after {self.retry_after_header_seconds} seconds."
         )
-        self.retry_after_seconds = retry_after_seconds
 
 
-EXECUTION_STATES = {"QUEUED", "RUNNING", "COMPLETED", "FAILED", "TIMEOUT"}
+class ExecutionQueueEnqueueError(RuntimeError):
+    def __init__(self, execution_id: int) -> None:
+        self.execution_id = execution_id
+        super().__init__(
+            "Execution row was created but queue enqueue failed; "
+            f"execution {execution_id} has been marked as FAILED."
+        )
 
 
 def _now_utc() -> datetime:
@@ -105,17 +115,19 @@ def create_execution_and_enqueue(db: Session, session_id: int) -> Execution:
     ).scalar_one_or_none()
 
     now = _now_utc()
+    now_monotonic = time.monotonic()
     retry_after_seconds = calculate_retry_after_seconds(
         last_queued_at=latest_execution.queued_at if latest_execution is not None else None,
         now=now,
         min_interval_seconds=settings.execution_min_interval_seconds,
+        now_monotonic=now_monotonic,
     )
     if retry_after_seconds > 0:
         _log_lifecycle(
             "queue_rejected_rate_limited",
             level=logging.WARNING,
             session_id=session.id,
-            retry_after_seconds=retry_after_seconds,
+            retry_after_seconds=f"{retry_after_seconds:.3f}",
         )
         raise ExecutionRateLimitedError(retry_after_seconds=retry_after_seconds)
 
@@ -131,7 +143,35 @@ def create_execution_and_enqueue(db: Session, session_id: int) -> Execution:
     db.commit()
     db.refresh(execution)
 
-    enqueue_execution_job(execution.id)
+    try:
+        enqueue_execution_job(execution.id)
+    except Exception as exc:
+        db.rollback()
+        execution.status = "FAILED"
+        execution.finished_at = _now_utc()
+        execution.error_message = f"Queue enqueue failed: {type(exc).__name__}: {exc}"
+
+        try:
+            db.add(execution)
+            db.commit()
+            db.refresh(execution)
+        except Exception:
+            db.rollback()
+            _log_lifecycle(
+                "enqueue_failed_persist_error",
+                level=logging.ERROR,
+                execution_id=execution.id,
+            )
+            raise
+
+        _log_lifecycle(
+            "enqueue_failed",
+            level=logging.ERROR,
+            execution_id=execution.id,
+            session_id=execution.session_id,
+            error_type=type(exc).__name__,
+        )
+        raise ExecutionQueueEnqueueError(execution_id=execution.id) from exc
 
     _log_lifecycle(
         "queued",

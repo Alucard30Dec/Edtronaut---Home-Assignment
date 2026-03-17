@@ -39,6 +39,7 @@
 - User code errors are not retried and remain `FAILED`.
 - Timeouts are marked `TIMEOUT` and are not retried by default.
 - Retry attempts are capped by `EXECUTION_INFRA_MAX_RETRIES`.
+- If queue enqueue fails after record creation, execution is immediately marked `FAILED` to avoid stuck `QUEUED` rows.
 
 ## Scalability
 - Horizontal API scaling is straightforward (stateless API layer).
@@ -50,6 +51,7 @@
 - Current design favors clarity and MVP delivery over strong isolation.
 - Polling for execution status is simpler than websockets/events.
 - Minimal retry policy avoids runaway retries and hidden costs.
+- Database setup currently uses `create_all` bootstrap for simplicity instead of migrations.
 
 ## Production Gaps
 - No hard sandbox isolation (container/VM per execution not implemented).

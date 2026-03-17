@@ -5,6 +5,7 @@ from app.db.session import get_db
 from app.schemas.execution import ExecutionQueuedResponse, ExecutionResponse
 from app.services.execution_service import (
     ExecutionNotFoundError,
+    ExecutionQueueEnqueueError,
     ExecutionRateLimitedError,
     ExecutionSessionNotFoundError,
     ExecutionSourceTooLargeError,
@@ -37,7 +38,12 @@ def run_code_session_endpoint(
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=str(exc),
-            headers={"Retry-After": str(exc.retry_after_seconds)},
+            headers={"Retry-After": str(exc.retry_after_header_seconds)},
+        ) from exc
+    except ExecutionQueueEnqueueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
         ) from exc
 
     return ExecutionQueuedResponse(execution_id=execution.id, status=execution.status)

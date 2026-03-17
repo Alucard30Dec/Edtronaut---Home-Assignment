@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: live-exec-api
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["sh", "-c", "python -m app.db.init_db && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     environment:
       APP_NAME: Live Code Execution & Management API
       ENVIRONMENT: development
@@ -31,7 +31,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: live-exec-worker
-    command: ["python", "-m", "app.workers.rq_worker"]
+    command: ["sh", "-c", "python -m app.db.init_db && python -m app.workers.rq_worker"]
     environment:
       APP_NAME: Live Code Execution & Management API
       ENVIRONMENT: development

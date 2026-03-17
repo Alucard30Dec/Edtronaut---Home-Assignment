@@ -47,8 +47,48 @@ class ExecutionPolicyTestCase(unittest.TestCase):
             last_queued_at=last_queued_at,
             now=now,
             min_interval_seconds=3,
+            now_monotonic=10.0,
+            monotonic_clock=lambda: 10.0,
         )
-        self.assertGreaterEqual(remaining, 1)
+        self.assertAlmostEqual(remaining, 2.0, places=3)
+
+    def test_rate_limit_subsecond_precision_not_floored(self) -> None:
+        now = datetime.now(timezone.utc)
+        last_queued_at = now - timedelta(seconds=0.25)
+        remaining = calculate_retry_after_seconds(
+            last_queued_at=last_queued_at,
+            now=now,
+            min_interval_seconds=1,
+            now_monotonic=100.0,
+            monotonic_clock=lambda: 100.0,
+        )
+        self.assertGreater(remaining, 0.7)
+        self.assertLess(remaining, 0.8)
+
+    def test_rate_limit_returns_zero_after_window(self) -> None:
+        now = datetime.now(timezone.utc)
+        last_queued_at = now - timedelta(seconds=1.01)
+        remaining = calculate_retry_after_seconds(
+            last_queued_at=last_queued_at,
+            now=now,
+            min_interval_seconds=1,
+            now_monotonic=5.0,
+            monotonic_clock=lambda: 5.0,
+        )
+        self.assertEqual(remaining, 0.0)
+
+    def test_rate_limit_uses_monotonic_clock_progress(self) -> None:
+        now = datetime.now(timezone.utc)
+        last_queued_at = now - timedelta(seconds=0.3)
+        ticks = iter([50.0, 50.2])
+
+        remaining = calculate_retry_after_seconds(
+            last_queued_at=last_queued_at,
+            now=now,
+            min_interval_seconds=1,
+            monotonic_clock=lambda: next(ticks),
+        )
+        self.assertAlmostEqual(remaining, 0.5, places=3)
 
     def test_language_allowlist_and_source_size(self) -> None:
         self.assertTrue(is_language_allowed("Python", ("python",)))
