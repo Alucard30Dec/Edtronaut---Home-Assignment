@@ -40,6 +40,27 @@ This repository contains the backend for the take-home assignment focused on sec
 - MVP caveat: this is not a production-grade sandbox. It does not provide strong multi-tenant isolation against malicious code.
 - Production caveat: use container/VM isolation, stricter syscall/network controls, hardened resource governance, and dedicated sandbox infra.
 
+## Reliability (Phase 6)
+- Lifecycle logging is added for key transitions (`queued`, `running`, `finished`, `retry_queued`, `skip_nonqueued`).
+- Execution transitions are explicit and timestamped (`queued_at`, `started_at`, `finished_at`).
+- Retry policy is intentionally narrow: only transient runner infrastructure outcomes are retried, with a small retry cap.
+
+## Idempotency (Phase 6)
+- Worker processing uses an atomic transition `QUEUED -> RUNNING`.
+- Duplicate jobs that see non-`QUEUED` state are skipped and logged instead of re-running completed work.
+
+## Failure Handling (Phase 6)
+- User code failures are persisted as `FAILED` with captured stderr/output and without retries.
+- Timeouts are persisted as `TIMEOUT` and are not retried by default.
+- Infrastructure/runner failures are distinguished from user failures and may be re-queued up to `EXECUTION_INFRA_MAX_RETRIES`.
+- If retry enqueue itself fails, the execution is finalized as `FAILED` with an infrastructure error message.
+
+## Safety and Abuse Protection (Phase 6)
+- Language allowlist is enforced at execution request time (`EXECUTION_ALLOWED_LANGUAGES`).
+- Source size limit is enforced before queueing (`EXECUTION_MAX_SOURCE_SIZE_BYTES`).
+- Minimal run-frequency protection is enforced per session (`EXECUTION_MIN_INTERVAL_SECONDS`).
+- MVP caveat: this is only a baseline safety layer; robust auth/rate limiting and stronger isolation should be added for production.
+
 ## Planned Milestones
 1. Configuration management and environment loading
 2. PostgreSQL schema and migrations setup

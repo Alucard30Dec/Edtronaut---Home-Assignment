@@ -5,7 +5,10 @@ from app.db.session import get_db
 from app.schemas.execution import ExecutionQueuedResponse, ExecutionResponse
 from app.services.execution_service import (
     ExecutionNotFoundError,
+    ExecutionRateLimitedError,
     ExecutionSessionNotFoundError,
+    ExecutionSourceTooLargeError,
+    UnsupportedExecutionLanguageError,
     create_execution_and_enqueue,
     get_execution_by_id,
 )
@@ -26,6 +29,16 @@ def run_code_session_endpoint(
         execution = create_execution_and_enqueue(db=db, session_id=session_id)
     except ExecutionSessionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except UnsupportedExecutionLanguageError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except ExecutionSourceTooLargeError as exc:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+    except ExecutionRateLimitedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(exc),
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        ) from exc
 
     return ExecutionQueuedResponse(execution_id=execution.id, status=execution.status)
 

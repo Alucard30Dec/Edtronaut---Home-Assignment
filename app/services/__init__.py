@@ -9,7 +9,10 @@ from app.services.code_session_service import (
 )
 from app.services.execution_service import (
     ExecutionNotFoundError,
+    ExecutionRateLimitedError,
     ExecutionSessionNotFoundError,
+    ExecutionSourceTooLargeError,
+    UnsupportedExecutionLanguageError,
     create_execution_and_enqueue,
     get_execution_by_id,
     process_execution,
@@ -26,6 +29,9 @@ __all__ = [
     "get_execution_by_id",
     "ExecutionNotFoundError",
     "ExecutionSessionNotFoundError",
+    "UnsupportedExecutionLanguageError",
+    "ExecutionSourceTooLargeError",
+    "ExecutionRateLimitedError",
     "process_execution",
     "process_execution_job",
 ]
