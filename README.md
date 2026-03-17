@@ -14,6 +14,12 @@ This repository contains the backend for the take-home assignment focused on sec
 - Package-oriented folder structure created
 - Basic health-check endpoint available at `/health`
 
+## Phase 2 Complete
+- Environment-driven app/database settings are centralized in `app/core/config.py`.
+- Example environment variables are documented in `.env.example`.
+- SQLAlchemy foundation is in place with shared base metadata and DB session management in `app/db/`.
+- Initial PostgreSQL-oriented models are added for `code_sessions` and `executions`, including `source_code_snapshot` for immutable run history.
+
 ## Planned Milestones
 1. Configuration management and environment loading
 2. PostgreSQL schema and migrations setup

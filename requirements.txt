@@ -4,3 +4,4 @@ psycopg2-binary
 redis
 rq
 python-dotenv
+SQLAlchemy>=2.0
